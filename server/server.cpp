@@ -1,20 +1,6 @@
-#include <sys/socket.h>
+#include "protocol.h"
+
 #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-
-void die(const char* message){
-    perror(message);
-    exit(EXIT_FAILURE); 
-}
-
-void msg(const char* message){
-    perror(message);
-}
 
 static void do_something(int connfd){
     char read_buff[64];
@@ -67,7 +53,13 @@ int main(){
             continue;
         }
 
-        do_something(connfd);
+        while(true){
+            int32_t err = one_request(connfd);
+            if (err) {
+                break;
+            }
+        }
+        
         close(connfd);
     }
 
