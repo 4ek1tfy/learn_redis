@@ -7,11 +7,31 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <sys/epoll.h>
 
-static inline void die(const char* message){
-    perror(message);
-    exit(EXIT_FAILURE); 
+#include <stdexcept>
+#include <system_error>
+
+static inline void die(const char* message) {
+    int current_errno = errno; 
+
+    if (message && *message) {
+        fprintf(stderr, "%s: ", message);
+    }
+
+    if (current_errno != 0) {
+        fprintf(stderr, "%s\n", strerror(current_errno));
+    } else {
+        fprintf(stderr, "Unknown/unspecified error\n");
+    }
+
+    fflush(stderr);
+    fflush(stdout);
+
+    exit(EXIT_FAILURE);
 }
+
 
 static inline void msg(const char* message){
     if (errno == 0) {
@@ -20,6 +40,7 @@ static inline void msg(const char* message){
         perror(message);
     }
 }
+
 
 static const size_t k_max_msg = 4096;
 
@@ -85,12 +106,5 @@ inline int32_t one_request(int connfd){
 
     printf("client says: %.*s\n", len, &rbuff[4]);
 
-
-    const char message[] = "world";
-    char wbuff[4 + sizeof(message)];
-    len = static_cast<uint32_t>(strlen(message));
-    net_len = htonl(len);
-    memcpy(wbuff, &net_len, 4);
-    memcpy(&wbuff[4], message, len);
-    return write_full(connfd, wbuff, 4 + len);
+    return write_full(connfd, rbuff, 4 + len);
 }
